@@ -55,7 +55,7 @@ module mips_single(clk, reset);
 
     // control signals
 
-    wire RegWrite, Branch, PCSrc, RegDst, MemtoReg, MemRead, MemWrite, ALUSrc, Zero, Jump;
+    wire RegWrite, Branch, BranchNE, PCSrc, RegDst, MemtoReg, MemRead, MemWrite, ALUSrc, Zero, Jump;
     wire [1:0] ALUOp;
     wire [2:0] Operation;
 
@@ -75,7 +75,9 @@ module mips_single(clk, reset);
 
     mem32 		DMEM(clk, MemRead, MemWrite, alu_out, rfile_rd2, dmem_rdata);
 
-    and  		BR_AND(PCSrc, Branch, Zero);
+    // MODIFICATIONS HERE:
+    // Branch if (Branch and zero are set) or (BrancNE and zero is not set)
+    or  		  BR_OR(PCSrc, (Branch & Zero), (BranchNE & ~Zero));
 
     mux2 #(5) 	RFMUX(RegDst, rt, rd, rfile_wn);
 
@@ -89,7 +91,7 @@ module mips_single(clk, reset);
 
     control_single CTL(.opcode(opcode), .RegDst(RegDst), .ALUSrc(ALUSrc), .MemtoReg(MemtoReg), 
                        .RegWrite(RegWrite), .MemRead(MemRead), .MemWrite(MemWrite), .Branch(Branch), 
-                       .ALUOp(ALUOp), .Jump(Jump));
+                       .BranchNE(BranchNE), .ALUOp(ALUOp), .Jump(Jump));
 
     alu_ctl 	ALUCTL(ALUOp, funct, Operation);
 endmodule
