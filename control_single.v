@@ -30,6 +30,7 @@ module control_single(opcode, RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWr
     parameter SW = 6'd43;
     parameter BEQ = 6'd4;
     parameter J = 6'd2;
+    parameter ADDI = 6'd8;
 
     always @(opcode)
     begin
@@ -57,7 +58,12 @@ module control_single(opcode, RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWr
           J :
           begin
               RegDst=1'bx; ALUSrc=1'bx; MemtoReg=1'bx; RegWrite=1'b0; MemRead=1'b0;
-              MemWrite=1'b0; Branch=1'bx; ALUOp = 2'b00; Jump=1'b1;
+              MemWrite=1'b0; Branch=1'b0; ALUOp = 2'b00; Jump=1'b1;
+          end
+          ADDI :
+          begin
+              RegDst=1'b0; ALUSrc=1'b1; MemtoReg=1'b0; RegWrite=1'b1; MemRead=1'b0;
+              MemWrite=1'b0; Branch=1'b0; ALUOp = 2'b00; Jump=1'b0;
           end
 
           default
