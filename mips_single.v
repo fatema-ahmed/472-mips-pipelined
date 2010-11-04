@@ -28,7 +28,7 @@ module mips_single(clk, reset);
     wire [5:0] opcode, funct;
     wire [4:0] rs, rt, rd, shamt;
     wire [15:0] immed;
-    wire [31:0] extend_immed, b_offset;
+    wire [31:0] extend_immed, b_offset, j_addr;
     wire [25:0] jumpoffset;
 
     assign opcode = instr[31:26];
@@ -49,11 +49,13 @@ module mips_single(clk, reset);
     // datapath signals
     wire [4:0] rfile_wn;
     wire [31:0] rfile_rd1, rfile_rd2, rfile_wd, alu_b, alu_out, b_tgt, pc_next,
-                pc, pc_incr, br_add_out, dmem_rdata;
-    
+                pc_jmp, pc, pc_incr, br_add_out, dmem_rdata;
+
+    assign j_addr = (pc_incr & 32'hf0000000) | (jumpoffset << 2);
+
     // control signals
 
-    wire RegWrite, Branch, PCSrc, RegDst, MemtoReg, MemRead, MemWrite, ALUSrc, Zero;
+    wire RegWrite, Branch, PCSrc, RegDst, MemtoReg, MemRead, MemWrite, ALUSrc, Zero, Jump;
     wire [1:0] ALUOp;
     wire [2:0] Operation;
 
@@ -77,15 +79,17 @@ module mips_single(clk, reset);
 
     mux2 #(5) 	RFMUX(RegDst, rt, rd, rfile_wn);
 
-    mux2 #(32)	PCMUX(PCSrc, pc_incr, b_tgt, pc_next);
+    mux2 #(32)	PCMUX(PCSrc, pc_incr, b_tgt, pc_jmp);
 
     mux2 #(32) 	ALUMUX(ALUSrc, rfile_rd2, extend_immed, alu_b);
 
     mux2 #(32)	WRMUX(MemtoReg, alu_out, dmem_rdata, rfile_wd);
 
+    mux2 #(32)  JMPMUX(Jump, pc_jmp, j_addr, pc_next);
+
     control_single CTL(.opcode(opcode), .RegDst(RegDst), .ALUSrc(ALUSrc), .MemtoReg(MemtoReg), 
                        .RegWrite(RegWrite), .MemRead(MemRead), .MemWrite(MemWrite), .Branch(Branch), 
-                       .ALUOp(ALUOp));
+                       .ALUOp(ALUOp), .Jump(Jump));
 
     alu_ctl 	ALUCTL(ALUOp, funct, Operation);
 endmodule
