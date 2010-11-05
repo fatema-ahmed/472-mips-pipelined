@@ -39,16 +39,19 @@ module rom32(address, data_out);
     if (address_select == 1)
     begin
       case (mem_offset) 
-          5'd0 : data_out = { 6'd35, 5'd0, 5'd2, 16'd4 };             // lw $2, 4($0)    r2=1
-          5'd1 : data_out = { 6'd35, 5'd0, 5'd3, 16'd8 };             // lw $3, 8($0)    r3=2
-          5'd2 : data_out = { 6'd35, 5'd0, 5'd4, 16'd20 };             // lw $4, 20($0)  r4=5
-          5'd3 : data_out = { 6'd0, 5'd0, 5'd0, 5'd5, 5'd0, 6'd32 };  // add $5, $0, $0  r5=0
-          5'd4 : data_out = { 6'd0, 5'd5, 5'd2, 5'd5, 5'd0, 6'd32 };  // add $5, $5, $1  r5 = r6 + 1
-          5'd5 : data_out = { 6'd0, 5'd4, 5'd5, 5'd6, 5'd0, 6'd42 };  // slt $6, $4, $5  is $5 > 54?
-          5'd6 : data_out = { 6'd4, 5'd6, 5'd0, -16'd3 };             // beq $6, $zero, -3  if not, go back 2
-          5'd7 : data_out = { 6'd43, 5'd0, 5'd5, 16'd0 };             // MEM[0] = $5
-          // add more cases here as desired
-          default data_out = 32'hxxxx;
+        // This program should initialize $t1 to 0 then loop, adding 5 to $t1
+        // until it is equal to 25. At this point it should jump to the end,
+        // skipping the addition of -17 into $t1
+        5'd0 : data_out = 32'h20090000;   // addi $t1, $zero, 0
+        // LOOP:
+        5'd1 : data_out = 32'h21290005;   // addi $t1, $t1, 5
+        5'd2 : data_out = 32'h20010019;   // addi $1, $0, 0x0019 (inserted by assembler)
+        5'd3 : data_out = 32'h1429fffd;   // bne  $t1, 25, LOOP
+        5'd4 : data_out = 32'h08100006;   // j    END
+        5'd5 : data_out = 32'h2129ffef;   // addi $t1, $t1, -17
+        // END:
+
+        default data_out = 32'hxxxx;
       endcase
       $display($time, " reading data: rom32[%h] => %h", address, data_out);
     end
