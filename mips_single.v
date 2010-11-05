@@ -42,56 +42,72 @@ module mips_single(clk, reset);
 
     // sign-extender
     assign extend_immed = { {16{immed[15]}}, immed };
-    
+
     // branch offset shifter
     assign b_offset = extend_immed << 2;
 
     // datapath signals
+    // MODIFICATIONS HERE:
+    // Add a few new wires
     wire [4:0] rfile_wn;
     wire [31:0] rfile_rd1, rfile_rd2, rfile_wd, alu_b, alu_out, b_tgt, pc_next,
                 pc_jmp, pc, pc_incr, br_add_out, dmem_rdata;
 
+
+    // MODIFICATIONS HERE:
+    // Calculate the jump address based on the 4 highest bits of PC and the
+    // jump offset shifted left by 2.
     assign j_addr = (pc_incr & 32'hf0000000) | (jumpoffset << 2);
 
     // control signals
 
+    // MODIFICATIONS HERE:
+    // New control signals BranchNE and Jump
     wire RegWrite, Branch, BranchNE, PCSrc, RegDst, MemtoReg, MemRead, MemWrite, ALUSrc, Zero, Jump;
     wire [1:0] ALUOp;
     wire [2:0] Operation;
 
     // module instantiations
 
-    reg32		PC(clk, reset, pc_next, pc);
+    reg32       PC(clk, reset, pc_next, pc);
 
-    add32 		PCADD(pc, 32'd4, pc_incr);
+    add32       PCADD(pc, 32'd4, pc_incr);
 
-    add32 		BRADD(pc_incr, b_offset, b_tgt);
+    add32       BRADD(pc_incr, b_offset, b_tgt);
 
-    reg_file	RFILE(clk, RegWrite, rs, rt, rfile_wn, rfile_rd1, rfile_rd2, rfile_wd); 
+    reg_file    RFILE(clk, RegWrite, rs, rt, rfile_wn, rfile_rd1, rfile_rd2, rfile_wd); 
 
-    alu 		ALU(Operation, rfile_rd1, alu_b, alu_out, Zero);
+    alu         ALU(Operation, rfile_rd1, alu_b, alu_out, Zero);
 
-    rom32 		IMEM(pc, instr);
+    rom32       IMEM(pc, instr);
 
-    mem32 		DMEM(clk, MemRead, MemWrite, alu_out, rfile_rd2, dmem_rdata);
+    mem32       DMEM(clk, MemRead, MemWrite, alu_out, rfile_rd2, dmem_rdata);
 
     // MODIFICATIONS HERE:
     // Branch if (Branch and zero are set) or (BrancNE and zero is not set)
-    or  		  BR_OR(PCSrc, (Branch & Zero), (BranchNE & ~Zero));
+    or          BR_OR(PCSrc, (Branch & Zero), (BranchNE & ~Zero));
 
-    mux2 #(5) 	RFMUX(RegDst, rt, rd, rfile_wn);
+    mux2 #(5)   RFMUX(RegDst, rt, rd, rfile_wn);
 
-    mux2 #(32)	PCMUX(PCSrc, pc_incr, b_tgt, pc_jmp);
+    // MODIFICATIONS HERE:
+    // A new wire to route the output of this mux to input 0 of JMPMUX
+    mux2 #(32)  PCMUX(PCSrc, pc_incr, b_tgt, pc_jmp);
 
-    mux2 #(32) 	ALUMUX(ALUSrc, rfile_rd2, extend_immed, alu_b);
+    mux2 #(32)  ALUMUX(ALUSrc, rfile_rd2, extend_immed, alu_b);
 
-    mux2 #(32)	WRMUX(MemtoReg, alu_out, dmem_rdata, rfile_wd);
+    mux2 #(32)  WRMUX(MemtoReg, alu_out, dmem_rdata, rfile_wd);
 
+    // MODIFICATIONS HERE:
+    // A new mux to select between the calculated jump address and the output
+    // of PCMUX
     mux2 #(32)  JMPMUX(Jump, pc_jmp, j_addr, pc_next);
 
+
+    // MODIFICATIONS HERE:
+    // Hook up new control signals BranchNE and Jump to the control unit
     control_single CTL(.opcode(opcode), .RegDst(RegDst), .ALUSrc(ALUSrc), .MemtoReg(MemtoReg), 
                        .RegWrite(RegWrite), .MemRead(MemRead), .MemWrite(MemWrite), .Branch(Branch), 
                        .BranchNE(BranchNE), .ALUOp(ALUOp), .Jump(Jump));
 
-    alu_ctl 	ALUCTL(ALUOp, funct, Operation);
+    alu_ctl   ALUCTL(ALUOp, funct, Operation);
 endmodule
