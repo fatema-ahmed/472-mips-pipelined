@@ -65,20 +65,20 @@ module control_single(opcode, RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWr
           end
           BNE :
           begin
-							// Set BranchNE, ALUOp = subtract, disable all writes
+              // Set BranchNE, ALUOp = subtract, disable all writes
               RegDst=1'bx; ALUSrc=1'b0; MemtoReg=1'bx; RegWrite=1'b0; MemRead=1'b0;
               MemWrite=1'b0; Branch=1'b0; BranchNE=1'b1; ALUOp = 2'b01; Jump=1'b0;
           end
           J :
           begin
-							// Set Jump and disable all writes
+              // Set Jump and disable all writes
               RegDst=1'bx; ALUSrc=1'bx; MemtoReg=1'bx; RegWrite=1'b0; MemRead=1'b0;
               MemWrite=1'b0; Branch=1'b0; BranchNE=1'b0; ALUOp = 2'b00; Jump=1'b1;
           end
           ADDI :
           begin
-							// RegDst = 0 to write the specified register, ALUSrc = 1 to pass
-							// the immediate value to the ALU, RegWrite is set, ALUOp = add
+              // RegDst = 0 to write the specified register, ALUSrc = 1 to pass
+              // the immediate value to the ALU, RegWrite is set, ALUOp = add
               RegDst=1'b0; ALUSrc=1'b1; MemtoReg=1'b0; RegWrite=1'b1; MemRead=1'b0;
               MemWrite=1'b0; Branch=1'b0; BranchNE=1'b0; ALUOp = 2'b00; Jump=1'b0;
           end
