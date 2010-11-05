@@ -19,16 +19,16 @@
 //-----------------------------------------------------------------------------
 
 module control_single(opcode, RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, BranchNE, ALUOp, Jump);
-		// MODIFICATIONS HERE:
-		// Added new control signals BranchNE and Jump
+    // MODIFICATIONS HERE:
+    // Added new control signals BranchNE and Jump
     input [5:0] opcode;
     output RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, BranchNE, Jump;
     output [1:0] ALUOp;
     reg    RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, BranchNE, Jump;
     reg    [1:0] ALUOp;
 
-		// MODIFICATIONS HERE:
-		// Added new opcodes
+    // MODIFICATIONS HERE:
+    // Added new opcodes
     parameter R_FORMAT = 6'd0;
     parameter LW = 6'd35;
     parameter SW = 6'd43;
@@ -37,9 +37,9 @@ module control_single(opcode, RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWr
     parameter J = 6'd2;
     parameter ADDI = 6'd8;
 
-		// MODIFICATIONS HERE:
-		// Implement new opcodes (individually commented) and set new control signals
-		// for existing opcodes.
+    // MODIFICATIONS HERE:
+    // Implement new opcodes (individually commented) and set new control signals
+    // for existing opcodes.
     always @(opcode)
     begin
         case (opcode)
