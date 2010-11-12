@@ -1,23 +1,8 @@
-//-----------------------------------------------------------------------------
-// Title         : Read-Only Memory (Instruction ROM)
-// Project       : ECE 313 - Computer Organization
-//-----------------------------------------------------------------------------
-// File          : rom32.v
-// Author        : John Nestor  <nestorj@lafayette.edu>
-// Organization  : Lafayette College
-// 
-// Created       : October 2002
-// Last modified : 7 January 2005
-//-----------------------------------------------------------------------------
-// Description :
-//   Behavioral model of a read-only memory used in the implementations of the MIPS
-//   processor subset described in Ch. 5-6 of "Computer Organization and Design, 3rd ed."
-//   by David Patterson & John Hennessey, Morgan Kaufmann, 2004 (COD3e).  
-//
-//   Note the use of the Verilog concatenation operator to specify different
-//   instruction fields in each memory element.
-//
-//-----------------------------------------------------------------------------
+//    A simple 32-bit by 32-word read-only memory model
+//    ECE 313 Fall 2002
+
+
+//  11/21/02 - modified to access up to 64 words JN
 
 module rom32(address, data_out);
   input  [31:0] address;
@@ -26,35 +11,50 @@ module rom32(address, data_out);
 
   parameter BASE_ADDRESS = 25'd0; // address that applies to this memory
 
-  wire [4:0] mem_offset;
+  wire [5:0] mem_offset;
   wire address_select;
 
-  assign mem_offset = address[6:2];  // drop 2 LSBs to get word offset
+  assign mem_offset = address[7:2];  // drop 2 LSBs to get word offset
 
-  assign address_select = (address[31:7] == BASE_ADDRESS);  // address decoding
+  assign address_select = (address[31:8] == BASE_ADDRESS);  // address decoding
 
   always @(address_select or mem_offset)
+
   begin
     if ((address % 4) != 0) $display($time, " rom32 error: unaligned address %d", address);
     if (address_select == 1)
     begin
-      case (mem_offset) 
-        // This program should initialize $t1 to 0 then loop, adding 5 to $t1
-        // until it is equal to 25. At this point it should jump to the end,
-        // skipping the addition of -17 into $t1
-        5'd0 : data_out = 32'h20090000;   // addi $t1, $zero, 0
-        // LOOP:
-        5'd1 : data_out = 32'h21290005;   // addi $t1, $t1, 5
-        5'd2 : data_out = 32'h20010019;   // addi $1, $0, 0x0019 (inserted by assembler)
-        5'd3 : data_out = 32'h1429fffd;   // bne  $t1, 25, LOOP
-        5'd4 : data_out = 32'h08100006;   // j    END
-        5'd5 : data_out = 32'h2129ffef;   // addi $t1, $t1, -17
-        // END:
-
-        default data_out = 32'hxxxx;
+      case (mem_offset)
+          5'd0 : data_out = { 6'd35, 5'd0, 5'd2, 16'd4 };             // lw $2, 4($0)    r2=1
+          5'd1 : data_out = { 6'd35, 5'd0, 5'd3, 16'd8 };             // lw $3, 8($0)    r3=2
+          5'd2 : data_out = { 6'd35, 5'd0, 5'd4, 16'd20 };             // lw $4, 20($0)  r4=5
+          5'd3 : data_out = { 6'd0, 5'd0, 5'd0, 5'd5, 5'd0, 6'd32 };  // add $5, $0, $0  r5=0
+          5'd4 : data_out = 0; // no-op to stall until add is done
+          5'd5 : data_out = 0; // no-op to stall until add is done
+          5'd6 : data_out = 0; // no-op to stall until add is done
+          5'd7 : data_out = { 6'd0, 5'd5, 5'd2, 5'd5, 5'd0, 6'd32 };  // add $5, $5, $1  r5 = r6 + 1
+          5'd8 : data_out = 0; // no-op to stall until add is done
+          5'd9 : data_out = 0; // no-op to stall until add is done
+          5'd10 : data_out = 0; // no-op to stall until add is done
+          5'd11 : data_out = { 6'd0, 5'd4, 5'd5, 5'd6, 5'd0, 6'd42 };  // slt $6, $4, $5  is $5 > 54?
+          5'd12 : data_out = 0; // no-op to stall until slt is done
+          5'd13 : data_out = 0; // no-op to stall until slt is done
+          5'd14 : data_out = 0; // no-op to stall until slt is done
+          5'd15 : data_out = { 6'd4, 5'd6, 5'd0, -16'd9 };             // beq $6, $zero, -9  if not, go back 2
+          5'd16 : data_out = 32'b0; // no-op after branch
+          5'd17 : data_out = 32'b0; // no-op after branch
+          5'd18 : data_out = 32'b0; // no-op after branch
+          5'd19 : data_out = { 6'd43, 5'd0, 5'd5, 16'd0 };             // MEM[0] = $5
+          5'd20 : data_out = { 6'd4, 5'd0, 5'd0, -16'd18 };            // beq $0, $0, -18 restart loop at word 3
+          // add more cases here as desired
+          default data_out = 32'hxxxx;
       endcase
+
       $display($time, " reading data: rom32[%h] => %h", address, data_out);
+
     end
-  end 
+  end
 endmodule
+
+
 
