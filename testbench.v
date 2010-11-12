@@ -1,13 +1,13 @@
 `timescale 10ns / 100ps
 
-module proj3_testbench;
+module proj4_testbench;
   reg clk, reset;
-  
-  mips_single p1(clk, reset);
-  
+
+  mips_pipeline p1(clk, reset);
+
   always
     #5 clk = ~clk;
-    
+
   initial begin
     clk = 1'b0;
     reset = 1'b0; #10;
