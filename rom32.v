@@ -25,6 +25,7 @@ module rom32(address, data_out);
     if (address_select == 1)
     begin
       case (mem_offset)
+          /*
           5'd0 : data_out = { 6'd35, 5'd0, 5'd2, 16'd4 };             // lw $2, 4($0)    r2=1
           5'd1 : data_out = { 6'd35, 5'd0, 5'd3, 16'd8 };             // lw $3, 8($0)    r3=2
           5'd2 : data_out = { 6'd35, 5'd0, 5'd4, 16'd20 };             // lw $4, 20($0)  r4=5
@@ -47,6 +48,27 @@ module rom32(address, data_out);
           5'd19 : data_out = { 6'd43, 5'd0, 5'd5, 16'd0 };             // MEM[0] = $5
           5'd20 : data_out = { 6'd4, 5'd0, 5'd0, -16'd18 };            // beq $0, $0, -18 restart loop at word 3
           // add more cases here as desired
+          */
+          5'd0  : data_out = 32'h8c020004;  // set r2 = 1
+          5'd1  : data_out = 0;
+          5'd2  : data_out = 0;
+          5'd3  : data_out = 0;
+          5'd4  : data_out = 32'h00421020;  // r2 = r2 + r2 = 2
+          5'd5  : data_out = 0;
+          5'd6  : data_out = 0;
+          5'd7  : data_out = 0;
+          5'd8  : data_out = { 6'd2, 26'd14 }; // jump to instruction 14
+          5'd9  : data_out = 0;
+          5'd10 : data_out = 32'h00421020;  // r2 = r2 + r2 = 4
+          5'd11 : data_out = 0;
+          5'd12 : data_out = 0;
+          5'd13 : data_out = 0;
+          5'd14 : data_out = 32'h00421020;  // r2 = r2 + r2 = 4 (hopefully)
+          5'd15 : data_out = 0;
+          5'd16 : data_out = 0;
+          5'd17 : data_out = 0;
+          5'd18 : data_out = 0;
+
           default data_out = 32'hxxxx;
       endcase
 

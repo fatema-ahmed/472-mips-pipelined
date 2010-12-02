@@ -27,7 +27,9 @@ input clk, reset;
 
     // IF Signal Declarations
 
-    wire [31:0] IF_instr, IF_pc, IF_pc_next, IF_pc4;
+    // MODIFICATIONS HERE:
+    // Add a new wire between the jump and branch muxes
+    wire [31:0] IF_instr, IF_pc, IF_pc_jump, IF_pc_next, IF_pc4;
 
     // ID Signal Declarations
 
@@ -37,6 +39,7 @@ input clk, reset;
     wire [4:0] ID_rs, ID_rt, ID_rd;
     wire [15:0] ID_immed;
     wire [31:0] ID_extend, ID_rd1, ID_rd2;
+    wire [31:0] ID_jaddr;
 
     assign ID_op = ID_instr[31:26];
     assign ID_rs = ID_instr[25:21];
@@ -45,7 +48,7 @@ input clk, reset;
     assign ID_immed = ID_instr[15:0];
 
     wire ID_RegWrite, ID_Branch, ID_RegDst, ID_MemtoReg,  // ID Control signals
-         ID_MemRead, ID_MemWrite, ID_ALUSrc;
+         ID_MemRead, ID_MemWrite, ID_ALUSrc, ID_Jump;
     wire [1:0] ID_ALUOp;
 
     // EX Signals
@@ -93,7 +96,14 @@ input clk, reset;
 
     add32 		IF_PCADD(IF_pc, 32'd4, IF_pc4);
 
-    mux2 #(32)	IF_PCMUX(MEM_PCSrc, IF_pc4, MEM_btgt, IF_pc_next);
+    // MODIFICATIONS HERE:
+    // Use the jump target from the ID stage if that was a jump
+    mux2 #(32)  IF_JMPMUX(ID_Jump, IF_pc4, ID_jaddr, IF_pc_jump);
+
+    // MODIFICATIONS HERE:
+    // Use the branch target from the MEM stage if that was a branch
+    // (Note: the branch has priority over the jump, since that instruction came first)
+    mux2 #(32)	IF_PCMUX(MEM_PCSrc, IF_pc_jump, MEM_btgt, IF_pc_next);
 
     rom32 		IMEM(IF_pc, IF_instr);
 
@@ -119,11 +129,16 @@ input clk, reset;
     // sign-extender
     assign ID_extend = { {16{ID_immed[15]}}, ID_immed };
 
+    // MODIFICATIONS HERE:
+    // Calculate the jump address from the incremented PC and the jump offset
+    assign ID_jaddr = {ID_pc4[31:28], ID_instr[25:0], 2'b00};
+
+
     control_pipeline CTL(.opcode(ID_op), .RegDst(ID_RegDst),
                        .ALUSrc(ID_ALUSrc), .MemtoReg(ID_MemtoReg),
                        .RegWrite(ID_RegWrite), .MemRead(ID_MemRead),
                        .MemWrite(ID_MemWrite), .Branch(ID_Branch),
-                       .ALUOp(ID_ALUOp));
+                       .ALUOp(ID_ALUOp), .Jump(ID_Jump));
 
 
     always @(posedge clk)		    // ID/EX Pipeline Register
@@ -131,7 +146,7 @@ input clk, reset;
         if (reset)
         begin
             EX_RegDst   <= 0;
-	     EX_ALUOp    <= 0;
+            EX_ALUOp    <= 0;
             EX_ALUSrc   <= 0;
             EX_Branch   <= 0;
             EX_MemRead  <= 0;
