@@ -115,7 +115,12 @@ input clk, reset;
             ID_pc4   <= 0;
         end
         else begin
-            ID_instr <= IF_instr;
+            // MODIFICATIONS HERE:
+            // Flush the loaded instruction to take the jump instead
+            if (ID_Jump)
+                ID_instr <= 0;
+            else
+                ID_instr <= IF_instr;
             ID_pc4   <= IF_pc4;
         end
     end
