@@ -58,7 +58,7 @@ module rom32(address, data_out);
           5'd6  : data_out = 0;
           5'd7  : data_out = 0;
           5'd8  : data_out = { 6'd2, 26'd13 }; // jump to instruction 14
-          5'd9 : data_out = 32'h00421020;  // r2 = r2 + r2 = 4
+          5'd9  : data_out = 32'h00421020;  // r2 = r2 + r2 = 4
           5'd10 : data_out = 0;
           5'd11 : data_out = 0;
           5'd12 : data_out = 0;
