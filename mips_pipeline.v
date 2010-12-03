@@ -150,14 +150,8 @@ input clk, reset;
     begin
         if (reset)
         begin
-            EX_RegDst   <= 0;
-            EX_ALUOp    <= 0;
-            EX_ALUSrc   <= 0;
-            EX_Branch   <= 0;
-            EX_MemRead  <= 0;
-            EX_MemWrite <= 0;
-            EX_RegWrite <= 0;
-            EX_MemtoReg <= 0;
+            // MODIFICATIONS HERE:
+            // Remove redundant assignments
             EX_RegDst   <= 0;
             EX_ALUOp    <= 0;
             EX_ALUSrc   <= 0;
@@ -175,14 +169,8 @@ input clk, reset;
             EX_rd       <= 0;
         end
         else begin
-            EX_RegDst   <= ID_RegDst;
-            EX_ALUOp    <= ID_ALUOp;
-            EX_ALUSrc   <= ID_ALUSrc;
-            EX_Branch   <= ID_Branch;
-            EX_MemRead  <= ID_MemRead;
-            EX_MemWrite <= ID_MemWrite;
-            EX_RegWrite <= ID_RegWrite;
-            EX_MemtoReg <= ID_MemtoReg;
+            // MODIFICATIONS HERE:
+            // Remove redundant assignments
             EX_RegDst   <= ID_RegDst;
             EX_ALUOp    <= ID_ALUOp;
             EX_ALUSrc   <= ID_ALUSrc;
@@ -212,9 +200,24 @@ input clk, reset;
 
     add32 		EX_BRADD(EX_pc4, EX_offset, EX_btgt);
 
-    mux2 #(32) 	ALUMUX(EX_ALUSrc, EX_rd2, EX_extend, EX_alub);
+    wire [31:0] MuxA_out, MuxB_out;
 
-    alu 		EX_ALU(EX_Operation, EX_rd1, EX_alub, EX_ALUOut, EX_Zero);
+    // MODIFICATIONS HERE:
+    // Muxes to select forwarded values
+    // If ForwardX:
+    //     00 -> value from ID/EX
+    //     01 -> value from MEM/WB
+    //     10 -> value from EX/WB
+    mux3 #(32)  FMUXA(ForwardA, EX_rd1, WB_wb, MEM_ALUOut, MuxA_out);
+    mux3 #(32)  FMUXB(ForwardB, EX_rd2, WB_wb, MEM_ALUOut, MuxB_out);
+
+    // MODIFICATIONS HERE:
+    // Take the output from FMUXB instead of directly from ID/EX
+    mux2 #(32) 	ALUMUX(EX_ALUSrc, MuxB_out, EX_extend, EX_alub);
+
+    // MODIFICATIONS HERE:
+    // Take the output from FMUXA instead of directly from ID/EX
+    alu 		EX_ALU(EX_Operation, MuxA_out, EX_alub, EX_ALUOut, EX_Zero);
 
     mux2 #(5) 	EX_RFMUX(EX_RegDst, EX_rt, EX_rd, EX_RegRd);
 
