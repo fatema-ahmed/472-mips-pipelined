@@ -53,9 +53,11 @@ input clk, reset;
 
     // EX Signals
 
+    // MODIFICATIONS HERE:
+    // Add EX_rs
     reg  [31:0] EX_pc4, EX_extend, EX_rd1, EX_rd2;
     wire [31:0]  EX_offset, EX_btgt, EX_alub, EX_ALUOut;
-    reg  [4:0]  EX_rt, EX_rd;
+    reg  [4:0]  EX_rs, EX_rt, EX_rd;
     wire [4:0]  EX_RegRd;
     wire [5:0] EX_funct;
 
@@ -66,6 +68,10 @@ input clk, reset;
 
     reg  [1:0] EX_ALUOp;
     wire [2:0] EX_Operation;
+
+    // MODIFICATIONS HERE:
+    // Add registers for forwarding control
+    reg  [1:0] ForwardA, ForwardB;
 
    // MEM Signals
 
@@ -151,7 +157,7 @@ input clk, reset;
         if (reset)
         begin
             // MODIFICATIONS HERE:
-            // Remove redundant assignments
+            // Remove redundant assignments, assign EX_rs
             EX_RegDst   <= 0;
             EX_ALUOp    <= 0;
             EX_ALUSrc   <= 0;
@@ -165,12 +171,13 @@ input clk, reset;
             EX_rd1      <= 0;
             EX_rd2      <= 0;
             EX_extend   <= 0;
+            EX_rs       <= 0;
             EX_rt       <= 0;
             EX_rd       <= 0;
         end
         else begin
             // MODIFICATIONS HERE:
-            // Remove redundant assignments
+            // Remove redundant assignments, assign EX_rs
             EX_RegDst   <= ID_RegDst;
             EX_ALUOp    <= ID_ALUOp;
             EX_ALUSrc   <= ID_ALUSrc;
@@ -184,6 +191,7 @@ input clk, reset;
             EX_rd1      <= ID_rd1;
             EX_rd2      <= ID_rd2;
             EX_extend   <= ID_extend;
+            EX_rs       <= ID_rs;
             EX_rt       <= ID_rt;
             EX_rd       <= ID_rd;
         end
@@ -222,6 +230,46 @@ input clk, reset;
     mux2 #(5) 	EX_RFMUX(EX_RegDst, EX_rt, EX_rd, EX_RegRd);
 
     alu_ctl 	EX_ALUCTL(EX_ALUOp, EX_funct, EX_Operation);
+
+
+    // MODIFICATIONS HERE:
+    // Implement the forwarding unit based on logic described in page 369
+    always @(*)
+    begin
+        // Set ForwardA
+        // Forward around EX hazards
+        if (MEM_RegWrite
+            && (MEM_RegRd != 0)
+            && (MEM_RegRd == EX_rs))
+            ForwardA = 2'b10;
+        // Forward around MEM hazards
+        else if (WB_RegWrite
+            && (WB_RegRd != 0)
+            && !(MEM_RegWrite && (MEM_RegRd != 0) && (MEM_RegRd != EX_rs))
+            && (WB_RegRd == EX_rs))
+            ForwardA = 2'b01;
+        // No hazards, use the value from ID/EX
+        else
+            ForwardA = 2'b00;
+
+
+        // Set ForwardB
+        // Forward around EX hazards
+        if (MEM_RegWrite
+            && (MEM_RegRd != 0)
+            && (MEM_RegRd == EX_rt))
+            ForwardB = 2'b10;
+        // Forward around MEM hazards
+        else if (WB_RegWrite
+            && (WB_RegRd != 0)
+            && !(MEM_RegWrite && (MEM_RegRd != 0) && (MEM_RegRd != EX_rt))
+            && (WB_RegRd == EX_rt))
+            ForwardB = 2'b01;
+        // No hazards, use the value from ID/EX
+        else
+            ForwardB = 2'b00;
+    end
+
 
     always @(posedge clk)		    // EX/MEM Pipeline Register
     begin
