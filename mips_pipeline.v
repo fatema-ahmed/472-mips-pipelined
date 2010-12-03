@@ -28,8 +28,12 @@ input clk, reset;
     // IF Signal Declarations
 
     // MODIFICATIONS HERE:
-    // Add a new wire between the jump and branch muxes
-    wire [31:0] IF_instr, IF_pc, IF_pc_jump, IF_pc_next, IF_pc4;
+    // Add a new wires between stall and jump and the jump and branch muxes
+    wire [31:0] IF_instr, IF_pc, IF_pc_maybestalled, IF_pc_jump, IF_pc_next, IF_pc4;
+
+    // MODIFICATIONS HERE:
+    // Add a new Stall signal
+    reg Stall;
 
     // ID Signal Declarations
 
@@ -103,8 +107,12 @@ input clk, reset;
     add32 		IF_PCADD(IF_pc, 32'd4, IF_pc4);
 
     // MODIFICATIONS HERE:
+    // When stalling don't increment the PC
+    mux2 #(32)  IF_SMUX(Stall, if_pc4, if_pc, if_pc_maybestalled);
+
+    // MODIFICATIONS HERE:
     // Use the jump target from the ID stage if that was a jump
-    mux2 #(32)  IF_JMPMUX(ID_Jump, IF_pc4, ID_jaddr, IF_pc_jump);
+    mux2 #(32)  IF_JMPMUX(ID_Jump, IF_pc_maybestalled, ID_jaddr, IF_pc_jump);
 
     // MODIFICATIONS HERE:
     // Use the branch target from the MEM stage if that was a branch
@@ -122,8 +130,8 @@ input clk, reset;
         end
         else begin
             // MODIFICATIONS HERE:
-            // Flush the loaded instruction to take the jump instead
-            if (ID_Jump)
+            // Flush the loaded instruction on a jump or stall
+            if (ID_Jump || Stall)
                 ID_instr <= 0;
             else
                 ID_instr <= IF_instr;
@@ -145,6 +153,20 @@ input clk, reset;
     assign ID_jaddr = {ID_pc4[31:28], ID_instr[25:0], 2'b00};
 
 
+    // MODIFICATIONS HERE:
+    // Implement the hazard detection unit
+    always @(*)
+    begin
+        if (EX_MemRead
+            && ((EX_rt == ID_rs) || (EX_rt == ID_rt)))
+            Stall = 1'b1;
+        else
+            Stall = 1'b0;
+    end
+
+
+    // MODIFICATIONS HERE:
+    // Connect ID_Jump to the control unit
     control_pipeline CTL(.opcode(ID_op), .RegDst(ID_RegDst),
                        .ALUSrc(ID_ALUSrc), .MemtoReg(ID_MemtoReg),
                        .RegWrite(ID_RegWrite), .MemRead(ID_MemRead),
