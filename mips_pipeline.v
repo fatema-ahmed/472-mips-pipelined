@@ -51,6 +51,12 @@ input clk, reset;
     assign ID_rd = ID_instr[15:11];
     assign ID_immed = ID_instr[15:0];
 
+    // MODIFICATIONS HERE:
+    // Intermediate control signals between the control unit and the stall
+    // muxes. We only need to zero writes and branch/jumps, as well as memread
+    // which could inadvertently trigger later stalls if its not zeroed.
+    wire ID_RegWrite_v, ID_MemWrite_v, ID_MemRead_v, ID_Branch_v, ID_Jump_v;
+
     wire ID_RegWrite, ID_Branch, ID_RegDst, ID_MemtoReg,  // ID Control signals
          ID_MemRead, ID_MemWrite, ID_ALUSrc, ID_Jump;
     wire [1:0] ID_ALUOp;
@@ -108,7 +114,7 @@ input clk, reset;
 
     // MODIFICATIONS HERE:
     // When stalling don't increment the PC
-    mux2 #(32)  IF_SMUX(Stall, if_pc4, if_pc, if_pc_maybestalled);
+    mux2 #(32)  IF_SMUX(Stall, IF_pc4, IF_pc, IF_pc_maybestalled);
 
     // MODIFICATIONS HERE:
     // Use the jump target from the ID stage if that was a jump
@@ -130,9 +136,12 @@ input clk, reset;
         end
         else begin
             // MODIFICATIONS HERE:
-            // Flush the loaded instruction on a jump or stall
-            if (ID_Jump || Stall)
+            // Flush the loaded instruction on a jump
+            if (ID_Jump)
                 ID_instr <= 0;
+
+            else if (Stall)
+                ID_instr <= ID_instr;
             else
                 ID_instr <= IF_instr;
             ID_pc4   <= IF_pc4;
@@ -169,10 +178,15 @@ input clk, reset;
     // Connect ID_Jump to the control unit
     control_pipeline CTL(.opcode(ID_op), .RegDst(ID_RegDst),
                        .ALUSrc(ID_ALUSrc), .MemtoReg(ID_MemtoReg),
-                       .RegWrite(ID_RegWrite), .MemRead(ID_MemRead),
-                       .MemWrite(ID_MemWrite), .Branch(ID_Branch),
-                       .ALUOp(ID_ALUOp), .Jump(ID_Jump));
+                       .RegWrite(ID_RegWrite_v), .MemRead(ID_MemRead_v),
+                       .MemWrite(ID_MemWrite_v), .Branch(ID_Branch_v),
+                       .ALUOp(ID_ALUOp), .Jump(ID_Jump_v));
 
+    mux2 #(1)   ID_RW_SMUX(Stall, ID_RegWrite_v, 0'b0, ID_RegWrite);
+    mux2 #(1)   ID_MR_SMUX(Stall, ID_MemRead_v,  0'b0, ID_MemRead);
+    mux2 #(1)   ID_MW_SMUX(Stall, ID_MemWrite_v, 0'b0, ID_MemWrite);
+    mux2 #(1)   ID_BR_SMUX(Stall, ID_Branch_v,   0'b0, ID_Branch);
+    mux2 #(1)   ID_JU_SMUX(Stall, ID_Jump_v,     0'b0, ID_Jump);
 
     always @(posedge clk)		    // ID/EX Pipeline Register
     begin
