@@ -250,10 +250,10 @@ input clk, reset;
     // Muxes to select forwarded values
     // If ForwardX:
     //     00 -> value from ID/EX
+    //     10 -> value from EX/MEM
     //     01 -> value from MEM/WB
-    //     10 -> value from EX/WB
-    mux3 #(32)  FMUXA(ForwardA, EX_rd1, WB_wb, MEM_ALUOut, MuxA_out);
-    mux3 #(32)  FMUXB(ForwardB, EX_rd2, WB_wb, MEM_ALUOut, MuxB_out);
+    mux3 #(32)  FMUXA(ForwardA, EX_rd1, WB_wd, MEM_ALUOut, MuxA_out);
+    mux3 #(32)  FMUXB(ForwardB, EX_rd2, WB_wd, MEM_ALUOut, MuxB_out);
 
     // MODIFICATIONS HERE:
     // Take the output from FMUXB instead of directly from ID/EX
