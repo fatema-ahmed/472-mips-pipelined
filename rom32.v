@@ -51,22 +51,16 @@ module rom32(address, data_out);
           */
           5'd0  : data_out = {6'd35, 5'd0, 5'd2, 16'd4};            // lw $2, 4($0)     r2 = 1
           5'd1  : data_out = {6'd0, 5'd2, 5'd2, 5'd2, 5'd0, 6'd32}; // add $2, $2, $2   r2 = 2
-          5'd2  : data_out = 0;
-          5'd3  : data_out = 0;
-          5'd4  : data_out = 0;
-          5'd5  : data_out = 0;
+          5'd2  : data_out = {6'd2, 26'd7};                         // jump to instruction 6
+          5'd3  : data_out = {6'd0, 5'd2, 5'd2, 5'd2, 5'd0, 6'd32}; // add $2, $2, $2   r2 = 4 (should be skipped)
+          5'd4  : data_out = 0;                                     // These are here just so we
+          5'd5  : data_out = 0;                                     // can jump to a higher address
           5'd6  : data_out = 0;
-          5'd7  : data_out = {6'd2, 26'd13};                         // jump to instruction 14
-          5'd8  : data_out = {6'd0, 5'd2, 5'd2, 5'd2, 5'd0, 6'd32}; // add $2, $2, $2   r2 = 4 (should be skipped)
+          5'd7  : data_out = {6'd0, 5'd2, 5'd2, 5'd2, 5'd0, 6'd32}; // add $2, $2, $2   r2 = 4
+          5'd8  : data_out = 0;
           5'd9  : data_out = 0;
           5'd10 : data_out = 0;
           5'd11 : data_out = 0;
-          5'd12 : data_out = 0;
-          5'd13 : data_out = {6'd0, 5'd2, 5'd2, 5'd2, 5'd0, 6'd32}; // add $2, $2, $2   r2 = 4
-          5'd14 : data_out = 0;
-          5'd15 : data_out = 0;
-          5'd16 : data_out = 0;
-          5'd17 : data_out = 0;
 
           default data_out = 32'hxxxx;
       endcase

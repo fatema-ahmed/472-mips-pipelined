@@ -182,11 +182,11 @@ input clk, reset;
                        .MemWrite(ID_MemWrite_v), .Branch(ID_Branch_v),
                        .ALUOp(ID_ALUOp), .Jump(ID_Jump_v));
 
-    mux2 #(1)   ID_RW_SMUX(Stall, ID_RegWrite_v, 0'b0, ID_RegWrite);
-    mux2 #(1)   ID_MR_SMUX(Stall, ID_MemRead_v,  0'b0, ID_MemRead);
-    mux2 #(1)   ID_MW_SMUX(Stall, ID_MemWrite_v, 0'b0, ID_MemWrite);
-    mux2 #(1)   ID_BR_SMUX(Stall, ID_Branch_v,   0'b0, ID_Branch);
-    mux2 #(1)   ID_JU_SMUX(Stall, ID_Jump_v,     0'b0, ID_Jump);
+    mux2 #(1)   ID_RW_SMUX(Stall, ID_RegWrite_v, 1'b0, ID_RegWrite);
+    mux2 #(1)   ID_MR_SMUX(Stall, ID_MemRead_v,  1'b0, ID_MemRead);
+    mux2 #(1)   ID_MW_SMUX(Stall, ID_MemWrite_v, 1'b0, ID_MemWrite);
+    mux2 #(1)   ID_BR_SMUX(Stall, ID_Branch_v,   1'b0, ID_Branch);
+    mux2 #(1)   ID_JU_SMUX(Stall, ID_Jump_v,     1'b0, ID_Jump);
 
     always @(posedge clk)		    // ID/EX Pipeline Register
     begin
