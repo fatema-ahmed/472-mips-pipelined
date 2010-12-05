@@ -42,7 +42,7 @@ module reg_file(clk, RegWrite, RN1, RN2, WN, RD1, RD2, WD);
     $display($time, " reg_file[%d] => %d (Port 2)", RN2, RD2);
   end
 
-  always @(posedge clk) 
+  always @(negedge clk)
     if (RegWrite && (WN != 0))
     begin
       file_array[WN] <= WD;
